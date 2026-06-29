@@ -87,10 +87,12 @@ class _HalamanLoginState extends State<HalamanLogin> {
       return;
     }
 
-    if (_selectedPeran == 'Customer' && password.isEmpty) {
+    if (password.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Silahkan masukkan Password Anda!'),
+        SnackBar(
+          content: Text(_selectedPeran == 'Admin' 
+              ? 'Silahkan masukkan PIN Admin Anda!' 
+              : 'Silahkan masukkan Password Anda!'),
           backgroundColor: Colors.red,
         ),
       );
@@ -101,7 +103,33 @@ class _HalamanLoginState extends State<HalamanLogin> {
 
     try {
       if (_selectedPeran == 'Admin') {
-        _showPinDialog(nama);
+        if (password == '1234') {
+          _catatLoginCepat(nama, 'Admin');
+          
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('Selamat datang, Admin $nama!'),
+                backgroundColor: Colors.green,
+              ),
+            );
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(
+                builder: (context) => HalamanDashboardOwner(
+                  namaAdmin: nama,
+                ),
+              ),
+            );
+          }
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('PIN Salah! akses ditolak'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
       } else {
         // LOGIKA PASSWORD CUSTOMER (HANYA DI MEMORI APLIKASI)
         bool isFirstTime = !_dataPasswordCustomer.containsKey(nama);
@@ -158,7 +186,6 @@ class _HalamanLoginState extends State<HalamanLogin> {
                 backgroundColor: Colors.red,
               ),
             );
-            setState(() => _isLoading = false);
           }
         }
       }
@@ -170,86 +197,8 @@ class _HalamanLoginState extends State<HalamanLogin> {
         ),
       );
     } finally {
-      if (mounted && _selectedPeran != 'Admin') setState(() => _isLoading = false);
+      if (mounted) setState(() => _isLoading = false);
     }
-  }
-
-  void _showPinDialog(String nama) {
-    final TextEditingController pinController = TextEditingController();
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Row(
-          children: [
-            Icon(Icons.admin_panel_settings, color: Colors.red),
-            SizedBox(width: 10),
-            Text('Verifikasi Admin'),
-          ],
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Text('Masukkan PIN Admin untuk melanjutkan.'),
-            const SizedBox(height: 15),
-            TextField(
-              controller: pinController,
-              obscureText: true,
-              keyboardType: TextInputType.number,
-              decoration: const InputDecoration(
-                border: OutlineInputBorder(),
-                labelText: 'Masukkan Kode Akses',
-                prefixIcon: Icon(Icons.key),
-              ),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () {
-              Navigator.pop(context);
-              setState(() => _isLoading = false);
-            },
-            child: const Text('Batal'),
-          ),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-            onPressed: () async {
-              if (pinController.text == '1234') {
-                Navigator.pop(context);
-                _catatLoginCepat(nama, 'Admin');
-                
-                if (mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text('Selamat datang, Admin $nama!'),
-                      backgroundColor: Colors.green,
-                    ),
-                  );
-                  Navigator.pushReplacement(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => HalamanDashboardOwner(
-                        namaAdmin: nama,
-                      ),
-                    ),
-                  );
-                }
-              } else {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('PIN Salah! akses ditolak'),
-                    backgroundColor: Colors.red,
-                  ),
-                );
-              }
-            },
-            child: const Text('Verifikasi', style: TextStyle(color: Colors.white)),
-          ),
-        ],
-      ),
-    );
   }
 
   @override
@@ -277,8 +226,8 @@ class _HalamanLoginState extends State<HalamanLogin> {
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
                 colors: [
-                  Colors.black.withOpacity(0.3),
-                  Colors.black.withOpacity(0.7),
+                  Colors.black.withOpacity(0.4),
+                  Colors.black.withOpacity(0.8),
                 ],
               ),
             ),
@@ -294,7 +243,7 @@ class _HalamanLoginState extends State<HalamanLogin> {
                   ),
                   color: Colors.white.withOpacity(0.95),
                   child: Padding(
-                    padding: const EdgeInsets.all(24.0),
+                    padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 32.0),
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       crossAxisAlignment: CrossAxisAlignment.center,
@@ -302,8 +251,15 @@ class _HalamanLoginState extends State<HalamanLogin> {
                         Container(
                           padding: const EdgeInsets.all(16),
                           decoration: BoxDecoration(
-                            color: Colors.red[100],
+                            color: Colors.red[50],
                             shape: BoxShape.circle,
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.red.withOpacity(0.1),
+                                blurRadius: 10,
+                                spreadRadius: 2,
+                              ),
+                            ],
                           ),
                           child: Icon(
                             Icons.restaurant_menu,
@@ -312,33 +268,37 @@ class _HalamanLoginState extends State<HalamanLogin> {
                           ),
                         ),
                         const SizedBox(height: 16),
-                        const Text(
-                          'Jajanan Nusantara',
+                        Text(
+                          _selectedPeran == 'Admin' ? 'Jajanan Nusantara (Admin)' : 'Jajanan Nusantara',
                           style: TextStyle(
-                            fontSize: 22,
+                            fontSize: 24,
                             fontWeight: FontWeight.bold,
-                            color: Colors.red,
+                            color: Colors.red[900],
+                            letterSpacing: 0.5,
                           ),
                         ),
                         const SizedBox(height: 8),
-                        const Text(
-                          'Login untuk memesan',
+                        Text(
+                          _selectedPeran == 'Admin' ? 'Akses dashboard manajemen resto' : 'Silakan masuk untuk memesan menu',
                           style: TextStyle(
                             fontSize: 14,
-                            color: Colors.grey,
+                            color: Colors.grey[600],
                           ),
                         ),
-                        const Divider(height: 32),
+                        const Divider(height: 40, thickness: 1),
                         
                         TextField(
                           controller: _namaController,
                           decoration: InputDecoration(
-                            labelText: 'Nama Anda',
-                            hintText: 'Masukkan nama Anda',
+                            labelText: _selectedPeran == 'Admin' ? 'Nama Admin' : 'Nama Anda',
+                            hintText: _selectedPeran == 'Admin' ? 'Masukkan nama admin' : 'Masukkan nama Anda',
                             prefixIcon: const Icon(Icons.person, color: Colors.red),
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(12),
-                              borderSide: BorderSide.none,
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: BorderSide(color: Colors.red[800]!, width: 2),
                             ),
                             filled: true,
                             fillColor: Colors.grey[50],
@@ -347,113 +307,25 @@ class _HalamanLoginState extends State<HalamanLogin> {
                         ),
                         const SizedBox(height: 16),
 
-                        if (_selectedPeran == 'Customer') ...[
-                          TextField(
-                            controller: _passwordController,
-                            obscureText: true,
-                            decoration: InputDecoration(
-                              labelText: 'Password Customer',
-                              prefixIcon: const Icon(Icons.lock, color: Colors.red),
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(12),
-                                borderSide: BorderSide.none,
-                              ),
-                              filled: true,
-                              fillColor: Colors.grey[50],
+                        TextField(
+                          controller: _passwordController,
+                          obscureText: true,
+                          decoration: InputDecoration(
+                            labelText: _selectedPeran == 'Admin' ? 'PIN Admin' : 'Password',
+                            hintText: _selectedPeran == 'Admin' ? 'Masukkan 4 digit PIN' : 'Password (bebas untuk sesi baru)',
+                            prefixIcon: Icon(_selectedPeran == 'Admin' ? Icons.key : Icons.lock, color: Colors.red),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
                             ),
-                            style: const TextStyle(fontSize: 16),
+                            focusedBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: BorderSide(color: Colors.red[800]!, width: 2),
+                            ),
+                            filled: true,
+                            fillColor: Colors.grey[50],
                           ),
-                          const SizedBox(height: 16),
-                        ],
-
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 4),
-                          decoration: BoxDecoration(
-                            color: Colors.grey[50],
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Row(
-                            children: [
-                              Expanded(
-                                child: RadioListTile<String>(
-                                  title: const Row(
-                                    children: [
-                                      Icon(Icons.person, size: 18, color: Colors.blue),
-                                      SizedBox(width: 4),
-                                      Text('Customer'),
-                                    ],
-                                  ),
-                                  value: 'Customer',
-                                  groupValue: _selectedPeran,
-                                  onChanged: (value) {
-                                    setState(() {
-                                      _selectedPeran = value!;
-                                      _passwordController.clear();
-                                    });
-                                  },
-                                  contentPadding: EdgeInsets.zero,
-                                  dense: true,
-                                ),
-                              ),
-                              Expanded(
-                                child: RadioListTile<String>(
-                                  title: const Row(
-                                    children: [
-                                      Icon(Icons.admin_panel_settings, size: 18, color: Colors.red),
-                                      SizedBox(width: 4),
-                                      Text('Admin'),
-                                    ],
-                                  ),
-                                  value: 'Admin',
-                                  groupValue: _selectedPeran,
-                                  onChanged: (value) {
-                                    setState(() {
-                                      _selectedPeran = value!;
-                                      _passwordController.clear();
-                                    });
-                                  },
-                                  contentPadding: EdgeInsets.zero,
-                                  dense: true,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        
-                        Container(
-                          padding: const EdgeInsets.all(8),
-                          decoration: BoxDecoration(
-                            color: _selectedPeran == 'Admin' 
-                                ? Colors.red[50] 
-                                : Colors.blue[50],
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: Row(
-                            children: [
-                              Icon(
-                                _selectedPeran == 'Admin' 
-                                    ? Icons.admin_panel_settings 
-                                    : Icons.person,
-                                size: 16,
-                                color: _selectedPeran == 'Admin' 
-                                    ? Colors.red[700] 
-                                    : Colors.blue[700],
-                              ),
-                              const SizedBox(width: 8),
-                              Text(
-                                _selectedPeran == 'Admin' 
-                                    ? 'Login sebagai Admin (PIN dibutuhkan)' 
-                                    : 'Login sebagai Customer (Buat password sendiri)',
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  color: _selectedPeran == 'Admin' 
-                                      ? Colors.red[700] 
-                                      : Colors.blue[700],
-                                ),
-                              ),
-                            ],
-                          ),
+                          style: const TextStyle(fontSize: 16),
+                          keyboardType: _selectedPeran == 'Admin' ? TextInputType.number : TextInputType.text,
                         ),
                         const SizedBox(height: 24),
 
@@ -464,7 +336,7 @@ class _HalamanLoginState extends State<HalamanLogin> {
                             style: ElevatedButton.styleFrom(
                               backgroundColor: Colors.red[800],
                               foregroundColor: Colors.white,
-                              elevation: 5,
+                              elevation: 3,
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(12),
                               ),
@@ -493,12 +365,40 @@ class _HalamanLoginState extends State<HalamanLogin> {
                                             ? 'MASUK SEBAGAI ADMIN' 
                                             : 'MASUK SEBAGAI CUSTOMER',
                                         style: const TextStyle(
-                                          fontSize: 16,
+                                          fontSize: 15,
                                           fontWeight: FontWeight.bold,
+                                          letterSpacing: 0.5,
                                         ),
                                       ),
                                     ],
                                   ),
+                          ),
+                        ),
+                        const SizedBox(height: 20),
+                        
+                        TextButton.icon(
+                          onPressed: () {
+                            setState(() {
+                              _selectedPeran = _selectedPeran == 'Customer' ? 'Admin' : 'Customer';
+                              _passwordController.clear();
+                            });
+                          },
+                          icon: Icon(
+                            _selectedPeran == 'Customer' 
+                                ? Icons.admin_panel_settings_outlined 
+                                : Icons.person_outline,
+                            color: Colors.red[800],
+                            size: 20,
+                          ),
+                          label: Text(
+                            _selectedPeran == 'Customer' 
+                                ? 'Masuk sebagai Admin' 
+                                : 'Kembali ke Login Customer',
+                            style: TextStyle(
+                              color: Colors.red[800],
+                              fontWeight: FontWeight.bold,
+                              fontSize: 14,
+                            ),
                           ),
                         ),
                       ],
@@ -1261,6 +1161,7 @@ class _HalamanKeranjangState extends State<HalamanKeranjang> {
         int totalHarga = _keranjangItems.fold(0, (sum, item) => sum + (item['hargaInt'] as int) * (item['jumlah'] as int));
         
         Map<String, dynamic> dataPesanan = {
+          "waktu": DateTime.now(),
           "nama": _namaController.text,
           "meja": _mejaController.text,
           "menu": teksMenuGabungan,
@@ -1791,10 +1692,17 @@ class HalamanStruk extends StatelessWidget {
     required this.metodePembayaran,
   });
 
+  String _formatWaktu(DateTime waktu) {
+    return '${waktu.hour.toString().padLeft(2, '0')}:${waktu.minute.toString().padLeft(2, '0')} - ${waktu.day.toString().padLeft(2, '0')}/${waktu.month.toString().padLeft(2, '0')}/${waktu.year}';
+  }
+
   @override
   Widget build(BuildContext context) {
     final items = pesanan['items'] as List<Map<String, dynamic>>;
     final total = pesanan['total'] as int;
+    final DateTime waktuOrder = pesanan['waktu'] is DateTime 
+        ? pesanan['waktu'] as DateTime 
+        : (pesanan['waktu'] != null ? DateTime.tryParse(pesanan['waktu'].toString()) ?? DateTime.now() : DateTime.now());
 
     return Scaffold(
       backgroundColor: Colors.white,
@@ -1865,7 +1773,7 @@ class HalamanStruk extends StatelessWidget {
                   _buildInfoRow('Pembayaran', metodePembayaran),
                   _buildInfoRow(
                     'Waktu', 
-                    DateTime.now().toString().substring(0, 16).replaceAll('T', ' '),
+                    _formatWaktu(waktuOrder),
                   ),
                 ],
               ),
@@ -1977,6 +1885,10 @@ class HalamanStruk extends StatelessWidget {
         ),
       );
 
+      final DateTime waktuOrder = pesanan['waktu'] is DateTime 
+          ? pesanan['waktu'] as DateTime 
+          : (pesanan['waktu'] != null ? DateTime.tryParse(pesanan['waktu'].toString()) ?? DateTime.now() : DateTime.now());
+
       final pdf = pw.Document();
       
       final items = pesanan['items'] as List<Map<String, dynamic>>;
@@ -2021,10 +1933,8 @@ class HalamanStruk extends StatelessWidget {
                       ),
                       child: pw.Column(
                         children: [
-                          _buildPdfInfoRow('Nama Pelanggan', pesanan['nama']),
-                          _buildPdfInfoRow('Nomor Meja', pesanan['meja']),
-                          _buildPdfInfoRow('Pembayaran', metodePembayaran),
-                          _buildPdfInfoRow('Waktu', DateTime.now().toString().substring(0, 16).replaceAll('T', ' ')),
+                          _buildPdfInfoRow('Waktu', _formatWaktu(waktuOrder)),
+                          _buildPdfInfoRow('Metode Pembayaran', metodePembayaran),
                         ],
                       ),
                     ),
@@ -2040,7 +1950,7 @@ class HalamanStruk extends StatelessWidget {
                         crossAxisAlignment: pw.CrossAxisAlignment.start,
                         children: [
                           pw.Text(
-                            'Detail Pesanan:',
+                            'Detail Pesanan (Menu):',
                             style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 14),
                           ),
                           pw.SizedBox(height: 5),
@@ -2514,6 +2424,7 @@ class _HalamanRiwayatState extends State<HalamanRiwayat> {
                                   child: OutlinedButton.icon(
                                     onPressed: () {
                                       Map<String, dynamic> dataStruk = {
+                                        'waktu': pesanan['waktu'],
                                         'nama': pesanan['nama'],
                                         'meja': pesanan['meja'],
                                         'total': pesanan['total'],
@@ -2567,6 +2478,7 @@ class HalamanDashboardOwner extends StatefulWidget {
 }
 
 class _HalamanDashboardOwnerState extends State<HalamanDashboardOwner> {
+  Map<String, dynamic> _dataHarian = {'omset': 'Loading...', 'transaksi': 'Loading...'};
   Map<String, dynamic> _dataMingguan = {'omset': 'Loading...', 'transaksi': 'Loading...'};
   Map<String, dynamic> _dataBulanan = {'omset': 'Loading...', 'transaksi': 'Loading...'};
   Map<String, dynamic> _dataTahunan = {'omset': 'Loading...', 'transaksi': 'Loading...'};
@@ -2649,11 +2561,13 @@ class _HalamanDashboardOwnerState extends State<HalamanDashboardOwner> {
   Future<void> _loadAllData() async {
     setState(() => _isLoading = true);
     try {
+      final harian = await _hitungLaporanPerPeriode('harian');
       final mingguan = await _hitungLaporanPerPeriode('mingguan');
       final bulanan = await _hitungLaporanPerPeriode('bulanan');
       final tahunan = await _hitungLaporanPerPeriode('tahunan');
       
       setState(() {
+        _dataHarian = harian;
         _dataMingguan = mingguan;
         _dataBulanan = bulanan;
         _dataTahunan = tahunan;
@@ -2760,7 +2674,10 @@ class _HalamanDashboardOwnerState extends State<HalamanDashboardOwner> {
       DateTime now = DateTime.now();
       List<Map<String, dynamic>> filteredPesanan = [];
       
-      if (periode == 'mingguan') {
+      if (periode == 'harian') {
+        DateTime startOfDay = DateTime(now.year, now.month, now.day);
+        filteredPesanan = pesanan.where((p) => p['waktu'].isAfter(startOfDay) || p['waktu'].isAtSameMomentAs(startOfDay)).toList();
+      } else if (periode == 'mingguan') {
         DateTime startOfWeek = now.subtract(Duration(days: now.weekday - 1));
         startOfWeek = DateTime(startOfWeek.year, startOfWeek.month, startOfWeek.day);
         filteredPesanan = pesanan.where((p) => p['waktu'].isAfter(startOfWeek)).toList();
