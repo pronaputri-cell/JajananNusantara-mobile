@@ -64,7 +64,7 @@ class _HalamanLoginState extends State<HalamanLogin> {
       http.post(
         Uri.parse(URL_GOOGLE_SHEETS), 
         body: jsonEncode(dataLogin),
-        headers: {'Content-Type': 'application/json'},
+        headers: {'Content-Type': 'text/plain'},
       );
       
       print('🔵 Background: Mencatat login $nama - $peran');
@@ -1161,7 +1161,7 @@ class _HalamanKeranjangState extends State<HalamanKeranjang> {
         int totalHarga = _keranjangItems.fold(0, (sum, item) => sum + (item['hargaInt'] as int) * (item['jumlah'] as int));
         
         Map<String, dynamic> dataPesanan = {
-          "waktu": DateTime.now(),
+          "waktu": DateTime.now().toIso8601String(),
           "nama": _namaController.text,
           "meja": _mejaController.text,
           "menu": teksMenuGabungan,
@@ -1177,7 +1177,7 @@ class _HalamanKeranjangState extends State<HalamanKeranjang> {
         final response = await http.post(
           Uri.parse(urlGAS), 
           body: jsonEncode(dataPesanan),
-          headers: {'Content-Type': 'application/json'},
+          headers: {'Content-Type': 'text/plain'},
         );
         
         print('🟢 Response status: ${response.statusCode}');
@@ -1701,8 +1701,8 @@ class HalamanStruk extends StatelessWidget {
     final items = pesanan['items'] as List<Map<String, dynamic>>;
     final total = pesanan['total'] as int;
     final DateTime waktuOrder = pesanan['waktu'] is DateTime 
-        ? pesanan['waktu'] as DateTime 
-        : (pesanan['waktu'] != null ? DateTime.tryParse(pesanan['waktu'].toString()) ?? DateTime.now() : DateTime.now());
+        ? (pesanan['waktu'] as DateTime).toLocal() 
+        : (pesanan['waktu'] != null ? (DateTime.tryParse(pesanan['waktu'].toString())?.toLocal() ?? DateTime.now()) : DateTime.now());
 
     return Scaffold(
       backgroundColor: Colors.white,
@@ -1886,8 +1886,8 @@ class HalamanStruk extends StatelessWidget {
       );
 
       final DateTime waktuOrder = pesanan['waktu'] is DateTime 
-          ? pesanan['waktu'] as DateTime 
-          : (pesanan['waktu'] != null ? DateTime.tryParse(pesanan['waktu'].toString()) ?? DateTime.now() : DateTime.now());
+          ? (pesanan['waktu'] as DateTime).toLocal() 
+          : (pesanan['waktu'] != null ? (DateTime.tryParse(pesanan['waktu'].toString())?.toLocal() ?? DateTime.now()) : DateTime.now());
 
       final pdf = pw.Document();
       
@@ -2100,7 +2100,7 @@ class _HalamanRiwayatState extends State<HalamanRiwayat> {
                     int.parse(timeParts[2]), // detik
                   );
                 } catch (e) {
-                  waktu = DateTime.parse(waktuString);
+                  waktu = DateTime.parse(waktuString).toLocal();
                 }
 
                 String nama = row[1].toString();
@@ -2181,8 +2181,8 @@ class _HalamanRiwayatState extends State<HalamanRiwayat> {
       semua.addAll(dataSheets);
       
       semua.sort((a, b) {
-        DateTime waktuA = a['waktu'] is DateTime ? a['waktu'] : DateTime.parse(a['waktu'].toString());
-        DateTime waktuB = b['waktu'] is DateTime ? b['waktu'] : DateTime.parse(b['waktu'].toString());
+        DateTime waktuA = a['waktu'] is DateTime ? (a['waktu'] as DateTime).toLocal() : DateTime.parse(a['waktu'].toString()).toLocal();
+        DateTime waktuB = b['waktu'] is DateTime ? (b['waktu'] as DateTime).toLocal() : DateTime.parse(b['waktu'].toString()).toLocal();
         return waktuB.compareTo(waktuA);
       });
       
@@ -2256,8 +2256,8 @@ class _HalamanRiwayatState extends State<HalamanRiwayat> {
                     final pesanan = _semuaRiwayat[index];
                     final items = pesanan['items'] as List<Map<String, dynamic>>? ?? [];
                     final waktu = pesanan['waktu'] is DateTime 
-                        ? pesanan['waktu'] as DateTime 
-                        : DateTime.parse(pesanan['waktu'].toString());
+                        ? (pesanan['waktu'] as DateTime).toLocal() 
+                        : DateTime.parse(pesanan['waktu'].toString()).toLocal();
                     final dariGoogle = pesanan['dariGoogleSheets'] ?? false;
                     
                     return Card(
@@ -2536,7 +2536,7 @@ class _HalamanDashboardOwnerState extends State<HalamanDashboardOwner> {
                   int.parse(timeParts[2]), // detik
                 );
               } catch (e) {
-                waktu = DateTime.parse(waktuString);
+                waktu = DateTime.parse(waktuString).toLocal();
               }
 
               loginData.add({
@@ -2641,7 +2641,7 @@ class _HalamanDashboardOwnerState extends State<HalamanDashboardOwner> {
                 int.parse(timeParts[2]), // detik
               );
             } catch (e) {
-              waktu = DateTime.parse(waktuString);
+              waktu = DateTime.parse(waktuString).toLocal();
             }
 
             String menu = row[3].toString();
@@ -2822,8 +2822,8 @@ class _HalamanDashboardOwnerState extends State<HalamanDashboardOwner> {
                         (index) {
                           final item = details[index];
                           final waktu = item['waktu'] is DateTime 
-                              ? item['waktu'] as DateTime 
-                              : DateTime.parse(item['waktu'].toString());
+                              ? (item['waktu'] as DateTime).toLocal() 
+                              : DateTime.parse(item['waktu'].toString()).toLocal();
                           final formattedWaktu = '${waktu.hour.toString().padLeft(2, '0')}:${waktu.minute.toString().padLeft(2, '0')} - ${waktu.day.toString().padLeft(2, '0')}/${waktu.month.toString().padLeft(2, '0')}/${waktu.year}';
                           final totalHarga = 'Rp ${item['total'].toString().replaceAllMapped(RegExp(r"(\d)(?=(\d{3})+(?!\d))"), (m) => "${m[1]}.")}';
                           final pembayaran = item['pembayaran']?.toString() ?? 'Cash';
@@ -3073,8 +3073,8 @@ class _HalamanDashboardOwnerState extends State<HalamanDashboardOwner> {
                         (index) {
                           final item = details[index];
                           final waktu = item['waktu'] is DateTime 
-                              ? item['waktu'] as DateTime 
-                              : DateTime.parse(item['waktu'].toString());
+                              ? (item['waktu'] as DateTime).toLocal() 
+                              : DateTime.parse(item['waktu'].toString()).toLocal();
                           final formattedWaktu = '${waktu.hour.toString().padLeft(2, '0')}:${waktu.minute.toString().padLeft(2, '0')} - ${waktu.day.toString().padLeft(2, '0')}/${waktu.month.toString().padLeft(2, '0')}/${waktu.year}';
                           final totalHarga = 'Rp ${item['total'].toString().replaceAllMapped(RegExp(r"(\d)(?=(\d{3})+(?!\d))"), (m) => "${m[1]}.")}';
                           final pembayaran = item['pembayaran']?.toString() ?? 'Cash';
