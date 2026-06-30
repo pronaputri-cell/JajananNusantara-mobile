@@ -2664,6 +2664,7 @@ class _HalamanDashboardOwnerState extends State<HalamanDashboardOwner> {
               'meja': row[2].toString(),
               'menu': menu,
               'total': totalHarga,
+              'pembayaran': row.length >= 6 ? row[5].toString() : 'Cash',
             });
           } catch (e) {
             continue;
@@ -2727,82 +2728,116 @@ class _HalamanDashboardOwnerState extends State<HalamanDashboardOwner> {
       final pdf = pw.Document();
       
       pdf.addPage(
-        pw.Page(
+        pw.MultiPage(
           pageFormat: PdfPageFormat.a4,
           build: (pw.Context context) {
-            return pw.Center(
-              child: pw.Container(
-                padding: pw.EdgeInsets.all(20),
+            final List<Map<String, dynamic>> details = List<Map<String, dynamic>>.from(data['detail'] ?? []);
+            
+            return [
+              pw.Center(
+                child: pw.Text(
+                  'JAJANAN NUSANTARA',
+                  style: pw.TextStyle(
+                    fontSize: 24,
+                    fontWeight: pw.FontWeight.bold,
+                  ),
+                ),
+              ),
+              pw.Center(
+                child: pw.Text(
+                  'LAPORAN KEUANGAN TOKO',
+                  style: pw.TextStyle(fontSize: 18, fontWeight: pw.FontWeight.bold),
+                ),
+              ),
+              pw.SizedBox(height: 10),
+              pw.Center(
+                child: pw.Text(
+                  judul,
+                  style: pw.TextStyle(fontSize: 16, fontWeight: pw.FontWeight.bold),
+                ),
+              ),
+              pw.Center(
+                child: pw.Text(
+                  'Tanggal Cetak: ${DateTime.now().toString().substring(0, 16).replaceAll('T', ' ')}',
+                  style: pw.TextStyle(fontSize: 12),
+                ),
+              ),
+              pw.SizedBox(height: 20),
+              
+              pw.Container(
+                padding: pw.EdgeInsets.all(15),
+                decoration: pw.BoxDecoration(
+                  border: pw.Border.all(color: PdfColors.grey300),
+                ),
                 child: pw.Column(
-                  crossAxisAlignment: pw.CrossAxisAlignment.center,
+                  crossAxisAlignment: pw.CrossAxisAlignment.start,
                   children: [
                     pw.Text(
-                      'JAJANAN NUSANTARA',
-                      style: pw.TextStyle(
-                        fontSize: 24,
-                        fontWeight: pw.FontWeight.bold,
-                      ),
+                      'RINGKASAN:',
+                      style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 14),
                     ),
-                    pw.Text(
-                      'LAPORAN KEUANGAN TOKO',
-                      style: pw.TextStyle(fontSize: 18, fontWeight: pw.FontWeight.bold),
+                    pw.SizedBox(height: 10),
+                    pw.Row(
+                      mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                      children: [
+                        pw.Text('Total Omset'),
+                        pw.Text(data['omset'], style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
+                      ],
                     ),
-                    pw.SizedBox(height: 20),
-                    pw.Text(
-                      judul,
-                      style: pw.TextStyle(fontSize: 16, fontWeight: pw.FontWeight.bold),
-                    ),
-                    pw.Text(
-                      'Tanggal Cetak: ${DateTime.now().toString().substring(0, 16).replaceAll('T', ' ')}',
-                      style: pw.TextStyle(fontSize: 12),
-                    ),
-                    pw.SizedBox(height: 30),
-                    
-                    pw.Container(
-                      padding: pw.EdgeInsets.all(15),
-                      decoration: pw.BoxDecoration(
-                        border: pw.Border.all(color: PdfColors.grey300),
-                      ),
-                      child: pw.Column(
-                        crossAxisAlignment: pw.CrossAxisAlignment.start,
-                        children: [
-                          pw.Text(
-                            'RINGKASAN:',
-                            style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 14),
-                          ),
-                          pw.SizedBox(height: 10),
-                          pw.Row(
-                            mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-                            children: [
-                              pw.Text('Total Omset'),
-                              pw.Text(data['omset'], style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
-                            ],
-                          ),
-                          pw.SizedBox(height: 5),
-                          pw.Row(
-                            mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-                            children: [
-                              pw.Text('Total Transaksi'),
-                              pw.Text(data['transaksi'], style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
-                            ],
-                          ),
-                        ],
-                      ),
-                    ),
-                    
-                    pw.SizedBox(height: 30),
-                    pw.Text(
-                      'Terima kasih telah menggunakan',
-                      style: pw.TextStyle(fontSize: 12),
-                    ),
-                    pw.Text(
-                      'sistem manajemen Jajanan Nusantara',
-                      style: pw.TextStyle(fontSize: 12),
+                    pw.SizedBox(height: 5),
+                    pw.Row(
+                      mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                      children: [
+                        pw.Text('Total Transaksi'),
+                        pw.Text(data['transaksi'], style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
+                      ],
                     ),
                   ],
                 ),
               ),
-            );
+              
+              pw.SizedBox(height: 20),
+              pw.Align(
+                alignment: pw.Alignment.centerLeft,
+                child: pw.Text(
+                  'DETAIL TRANSAKSI:',
+                  style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 14),
+                ),
+              ),
+              pw.SizedBox(height: 10),
+              
+              details.isEmpty
+                  ? pw.Text('Tidak ada detail transaksi untuk periode ini.')
+                  : pw.Table.fromTextArray(
+                      context: context,
+                      border: pw.TableBorder.all(color: PdfColors.grey300),
+                      headerDecoration: pw.BoxDecoration(color: PdfColors.grey100),
+                      headerHeight: 25,
+                      cellHeight: 25,
+                      headerStyle: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 10),
+                      cellStyle: const pw.TextStyle(fontSize: 9),
+                      headers: ['No', 'Waktu', 'Pesanan', 'Total', 'Metode Pembayaran'],
+                      data: List<List<String>>.generate(
+                        details.length,
+                        (index) {
+                          final item = details[index];
+                          final waktu = item['waktu'] is DateTime 
+                              ? item['waktu'] as DateTime 
+                              : DateTime.parse(item['waktu'].toString());
+                          final formattedWaktu = '${waktu.hour.toString().padLeft(2, '0')}:${waktu.minute.toString().padLeft(2, '0')} - ${waktu.day.toString().padLeft(2, '0')}/${waktu.month.toString().padLeft(2, '0')}/${waktu.year}';
+                          final totalHarga = 'Rp ${item['total'].toString().replaceAllMapped(RegExp(r"(\d)(?=(\d{3})+(?!\d))"), (m) => "${m[1]}.")}';
+                          final pembayaran = item['pembayaran']?.toString() ?? 'Cash';
+                          return [
+                            '${index + 1}',
+                            formattedWaktu,
+                            '${item['menu']}',
+                            totalHarga,
+                            pembayaran,
+                          ];
+                        },
+                      ),
+                    ),
+            ];
           },
         ),
       );
@@ -2853,174 +2888,207 @@ class _HalamanDashboardOwnerState extends State<HalamanDashboardOwner> {
       final dataMingguan = await _hitungLaporanPerPeriode('mingguan');
       final dataBulanan = await _hitungLaporanPerPeriode('bulanan');
       final dataTahunan = await _hitungLaporanPerPeriode('tahunan');
+      final dataKeseluruhan = await _hitungLaporanPerPeriode('semua');
       
       final pdf = pw.Document();
       
       pdf.addPage(
-        pw.Page(
+        pw.MultiPage(
           pageFormat: PdfPageFormat.a4,
           build: (pw.Context context) {
-            return pw.Center(
-              child: pw.Container(
-                padding: pw.EdgeInsets.all(20),
+            final List<Map<String, dynamic>> details = List<Map<String, dynamic>>.from(dataKeseluruhan['detail'] ?? []);
+            
+            return [
+              pw.Center(
+                child: pw.Text(
+                  'JAJANAN NUSANTARA',
+                  style: pw.TextStyle(
+                    fontSize: 24,
+                    fontWeight: pw.FontWeight.bold,
+                  ),
+                ),
+              ),
+              pw.Center(
+                child: pw.Text(
+                  'LAPORAN KEUANGAN LENGKAP',
+                  style: pw.TextStyle(fontSize: 18, fontWeight: pw.FontWeight.bold),
+                ),
+              ),
+              pw.Center(
+                child: pw.Text(
+                  'Tanggal Cetak: ${DateTime.now().toString().substring(0, 16).replaceAll('T', ' ')}',
+                  style: pw.TextStyle(fontSize: 12),
+                ),
+              ),
+              pw.SizedBox(height: 20),
+              
+              pw.Container(
+                padding: pw.EdgeInsets.all(10),
+                margin: pw.EdgeInsets.only(bottom: 10),
+                decoration: pw.BoxDecoration(
+                  border: pw.Border.all(color: PdfColors.grey300),
+                ),
                 child: pw.Column(
-                  crossAxisAlignment: pw.CrossAxisAlignment.center,
+                  crossAxisAlignment: pw.CrossAxisAlignment.start,
                   children: [
                     pw.Text(
-                      'JAJANAN NUSANTARA',
-                      style: pw.TextStyle(
-                        fontSize: 24,
-                        fontWeight: pw.FontWeight.bold,
-                      ),
+                      '--- LAPORAN MINGGUAN ---',
+                      style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 14),
                     ),
-                    pw.Text(
-                      'LAPORAN KEUANGAN LENGKAP',
-                      style: pw.TextStyle(fontSize: 18, fontWeight: pw.FontWeight.bold),
+                    pw.Row(
+                      mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                      children: [
+                        pw.Text('Omset:'),
+                        pw.Text(dataMingguan['omset'], style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
+                      ],
                     ),
-                    pw.Text(
-                      'Tanggal Cetak: ${DateTime.now().toString().substring(0, 16).replaceAll('T', ' ')}',
-                      style: pw.TextStyle(fontSize: 12),
-                    ),
-                    pw.SizedBox(height: 20),
-                    
-                    pw.Container(
-                      padding: pw.EdgeInsets.all(10),
-                      margin: pw.EdgeInsets.only(bottom: 10),
-                      decoration: pw.BoxDecoration(
-                        border: pw.Border.all(color: PdfColors.grey300),
-                      ),
-                      child: pw.Column(
-                        crossAxisAlignment: pw.CrossAxisAlignment.start,
-                        children: [
-                          pw.Text(
-                            '--- LAPORAN MINGGUAN ---',
-                            style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 14),
-                          ),
-                          pw.Row(
-                            mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-                            children: [
-                              pw.Text('Omset:'),
-                              pw.Text(dataMingguan['omset'], style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
-                            ],
-                          ),
-                          pw.Row(
-                            mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-                            children: [
-                              pw.Text('Transaksi:'),
-                              pw.Text(dataMingguan['transaksi'], style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
-                            ],
-                          ),
-                        ],
-                      ),
-                    ),
-                    
-                    pw.Container(
-                      padding: pw.EdgeInsets.all(10),
-                      margin: pw.EdgeInsets.only(bottom: 10),
-                      decoration: pw.BoxDecoration(
-                        border: pw.Border.all(color: PdfColors.grey300),
-                      ),
-                      child: pw.Column(
-                        crossAxisAlignment: pw.CrossAxisAlignment.start,
-                        children: [
-                          pw.Text(
-                            '--- LAPORAN BULANAN ---',
-                            style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 14),
-                          ),
-                          pw.Row(
-                            mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-                            children: [
-                              pw.Text('Omset:'),
-                              pw.Text(dataBulanan['omset'], style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
-                            ],
-                          ),
-                          pw.Row(
-                            mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-                            children: [
-                              pw.Text('Transaksi:'),
-                              pw.Text(dataBulanan['transaksi'], style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
-                            ],
-                          ),
-                        ],
-                      ),
-                    ),
-                    
-                    pw.Container(
-                      padding: pw.EdgeInsets.all(10),
-                      margin: pw.EdgeInsets.only(bottom: 10),
-                      decoration: pw.BoxDecoration(
-                        border: pw.Border.all(color: PdfColors.grey300),
-                      ),
-                      child: pw.Column(
-                        crossAxisAlignment: pw.CrossAxisAlignment.start,
-                        children: [
-                          pw.Text(
-                            '--- LAPORAN TAHUNAN ---',
-                            style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 14),
-                          ),
-                          pw.Row(
-                            mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-                            children: [
-                              pw.Text('Omset:'),
-                              pw.Text(dataTahunan['omset'], style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
-                            ],
-                          ),
-                          pw.Row(
-                            mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-                            children: [
-                              pw.Text('Transaksi:'),
-                              pw.Text(dataTahunan['transaksi'], style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
-                            ],
-                          ),
-                        ],
-                      ),
-                    ),
-                    
-                    pw.Divider(),
-                    
-                    pw.Container(
-                      padding: pw.EdgeInsets.all(10),
-                      decoration: pw.BoxDecoration(
-                        color: PdfColors.grey100,
-                      ),
-                      child: pw.Column(
-                        crossAxisAlignment: pw.CrossAxisAlignment.start,
-                        children: [
-                          pw.Text(
-                            'RINGKASAN TOTAL:',
-                            style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 14),
-                          ),
-                          pw.Row(
-                            mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-                            children: [
-                              pw.Text('Total Omset Keseluruhan:'),
-                              pw.Text('Rp 92.660.000', style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
-                            ],
-                          ),
-                          pw.Row(
-                            mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-                            children: [
-                              pw.Text('Total Transaksi:'),
-                              pw.Text('2.637 Transaksi', style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
-                            ],
-                          ),
-                        ],
-                      ),
-                    ),
-                    
-                    pw.SizedBox(height: 20),
-                    pw.Text(
-                      'Terima kasih telah menggunakan',
-                      style: pw.TextStyle(fontSize: 12),
-                    ),
-                    pw.Text(
-                      'sistem manajemen Jajanan Nusantara',
-                      style: pw.TextStyle(fontSize: 12),
+                    pw.Row(
+                      mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                      children: [
+                        pw.Text('Transaksi:'),
+                        pw.Text(dataMingguan['transaksi'], style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
+                      ],
                     ),
                   ],
                 ),
               ),
-            );
+              
+              pw.Container(
+                padding: pw.EdgeInsets.all(10),
+                margin: pw.EdgeInsets.only(bottom: 10),
+                decoration: pw.BoxDecoration(
+                  border: pw.Border.all(color: PdfColors.grey300),
+                ),
+                child: pw.Column(
+                  crossAxisAlignment: pw.CrossAxisAlignment.start,
+                  children: [
+                    pw.Text(
+                      '--- LAPORAN BULANAN ---',
+                      style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 14),
+                    ),
+                    pw.Row(
+                      mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                      children: [
+                        pw.Text('Omset:'),
+                        pw.Text(dataBulanan['omset'], style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
+                      ],
+                    ),
+                    pw.Row(
+                      mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                      children: [
+                        pw.Text('Transaksi:'),
+                        pw.Text(dataBulanan['transaksi'], style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              
+              pw.Container(
+                padding: pw.EdgeInsets.all(10),
+                margin: pw.EdgeInsets.only(bottom: 10),
+                decoration: pw.BoxDecoration(
+                  border: pw.Border.all(color: PdfColors.grey300),
+                ),
+                child: pw.Column(
+                  crossAxisAlignment: pw.CrossAxisAlignment.start,
+                  children: [
+                    pw.Text(
+                      '--- LAPORAN TAHUNAN ---',
+                      style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 14),
+                    ),
+                    pw.Row(
+                      mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                      children: [
+                        pw.Text('Omset:'),
+                        pw.Text(dataTahunan['omset'], style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
+                      ],
+                    ),
+                    pw.Row(
+                      mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                      children: [
+                        pw.Text('Transaksi:'),
+                        pw.Text(dataTahunan['transaksi'], style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              
+              pw.Divider(),
+              
+              pw.Container(
+                padding: pw.EdgeInsets.all(10),
+                decoration: pw.BoxDecoration(
+                  color: PdfColors.grey100,
+                ),
+                child: pw.Column(
+                  crossAxisAlignment: pw.CrossAxisAlignment.start,
+                  children: [
+                    pw.Text(
+                      'RINGKASAN TOTAL KESELURUHAN:',
+                      style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 14),
+                    ),
+                    pw.Row(
+                      mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                      children: [
+                        pw.Text('Total Omset Keseluruhan:'),
+                        pw.Text(dataKeseluruhan['omset'], style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
+                      ],
+                    ),
+                    pw.Row(
+                      mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                      children: [
+                        pw.Text('Total Transaksi:'),
+                        pw.Text(dataKeseluruhan['transaksi'], style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              
+              pw.SizedBox(height: 20),
+              pw.Align(
+                alignment: pw.Alignment.centerLeft,
+                child: pw.Text(
+                  'DETAIL SEMUA TRANSAKSI PESANAN:',
+                  style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 14),
+                ),
+              ),
+              pw.SizedBox(height: 10),
+              
+              details.isEmpty
+                  ? pw.Text('Tidak ada detail transaksi.')
+                  : pw.Table.fromTextArray(
+                      context: context,
+                      border: pw.TableBorder.all(color: PdfColors.grey300),
+                      headerDecoration: pw.BoxDecoration(color: PdfColors.grey100),
+                      headerHeight: 25,
+                      cellHeight: 25,
+                      headerStyle: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 10),
+                      cellStyle: const pw.TextStyle(fontSize: 9),
+                      headers: ['No', 'Waktu', 'Pesanan', 'Total', 'Metode Pembayaran'],
+                      data: List<List<String>>.generate(
+                        details.length,
+                        (index) {
+                          final item = details[index];
+                          final waktu = item['waktu'] is DateTime 
+                              ? item['waktu'] as DateTime 
+                              : DateTime.parse(item['waktu'].toString());
+                          final formattedWaktu = '${waktu.hour.toString().padLeft(2, '0')}:${waktu.minute.toString().padLeft(2, '0')} - ${waktu.day.toString().padLeft(2, '0')}/${waktu.month.toString().padLeft(2, '0')}/${waktu.year}';
+                          final totalHarga = 'Rp ${item['total'].toString().replaceAllMapped(RegExp(r"(\d)(?=(\d{3})+(?!\d))"), (m) => "${m[1]}.")}';
+                          final pembayaran = item['pembayaran']?.toString() ?? 'Cash';
+                          return [
+                            '${index + 1}',
+                            formattedWaktu,
+                            '${item['menu']}',
+                            totalHarga,
+                            pembayaran,
+                          ];
+                        },
+                      ),
+                    ),
+            ];
           },
         ),
       );
@@ -3417,6 +3485,22 @@ class _HalamanDashboardOwnerState extends State<HalamanDashboardOwner> {
                   ),
                   const SizedBox(height: 10),
 
+                  _buildCardLaporan(
+                    konteks: context,
+                    judul: 'Laporan Harian',
+                    rentangWaktu: 'Hari Ini',
+                    omset: _dataHarian['omset'],
+                    jumlahTransaksi: _dataHarian['transaksi'],
+                    warnaTema: Colors.orange[700]!,
+                    ikon: Icons.today,
+                    onPrint: () {
+                      _cetakLaporanPerPeriodePDF(
+                        context,
+                        'LAPORAN HARIAN',
+                        'harian',
+                      );
+                    },
+                  ),
                   _buildCardLaporan(
                     konteks: context,
                     judul: 'Laporan Mingguan',
